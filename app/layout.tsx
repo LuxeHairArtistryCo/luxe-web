@@ -6,6 +6,7 @@ import Footer from "@/components/footer";
 import { getCachedSiteSettings } from '@/lib/sanity'
 import { SiteSettings } from "@/lib/types";
 import { urlFor } from "@/lib/image";
+import { Analytics } from "@vercel/analytics/next"
 
 const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
 const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
@@ -37,6 +38,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           {children}
         </main>
         <Footer settings={settings} />
+        <Analytics />
       </body>
     </html>
   );
