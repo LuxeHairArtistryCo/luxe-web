@@ -25,10 +25,10 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   const settings = await getCachedSiteSettings();
 
   return (
-    <html lang="en" className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}>
-      <body className="min-h-screen flex flex-col">
+    <html lang="en" className={`${geistSans.variable} ${geistMono.variable}`}>
+      <body className="flex flex-col min-h-screen">
         {settings.announcementBanner && (
-          <div className="bg-primary text-light text-center text-sm py-2 px-4">
+          <div className="text-center text-sm py-2 px-4" style={{ background: "var(--color-primary)", color: "var(--color-light)" }}>
             {settings.announcementBanner}
           </div>
         )}

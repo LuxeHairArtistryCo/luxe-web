@@ -13,11 +13,11 @@ export default function ArtistList({ artists, title }: Props) {
 	const [filterAccepting, setFilterAccepting] = useState(false);
 
 	const filtered = filterAccepting
-		? artists.filter(a => a.isAcceptingNewClients)
+		? artists.filter(a => a.isAcceptingNewClients !== false)
 		: artists;
 
 	return (
-		<main className="min-h-screen">
+		<main>
 			<div className="max-w-5xl mx-auto px-4 py-8">
 
 				{/* Page heading */}

@@ -13,7 +13,7 @@ export default function ArtistCard({ artist, index }: Props) {
 	const href = artist.slug?.current ? `${basePath}/${artist.slug.current}` : null;
 
 	const hasBooking =
-		artist.isAcceptingNewClients &&
+		artist.isAcceptingNewClients !== false &&
 		(artist.onlineBookingLink || artist.textBookingPhoneNumber || artist.callBookingPhoneNumber);
 
 	return (

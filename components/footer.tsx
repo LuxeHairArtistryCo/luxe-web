@@ -18,7 +18,7 @@ export default function Footer({ settings }: Props) {
 							<h3 className="font-bold mb-2">Hours of Operation</h3>
 							<div className="grid grid-cols-2 text-sm">
 								{hours.map((entry, i) => (
-									<div key={i} className="contents">
+									<div key={i} style={{ display: 'contents' }}>
 										<div className="text-end pe-4 py-0.5 opacity-75">{entry.day}</div>
 										<div className="py-0.5">{entry.hours}</div>
 									</div>
@@ -32,19 +32,19 @@ export default function Footer({ settings }: Props) {
 						<h3 className="font-bold mb-2">Contact Us</h3>
 						<div className="grid grid-cols-2 text-sm">
 							{settings.addressLine1 && (
-								<div className="contents">
+								<div style={{ display: 'contents' }}>
 									<div className="text-end pe-4 py-0.5 opacity-75">Address</div>
 									<div className="py-0.5">{settings.addressLine1}</div>
 								</div>
 							)}
 							{settings.addressLine2 && (
-								<div className="contents">
+								<div style={{ display: 'contents' }}>
 									<div className="text-end pe-4 py-0.5"></div>
 									<div className="py-0.5">{settings.addressLine2}</div>
 								</div>
 							)}
 							{settings.phone && (
-								<div className="contents">
+								<div style={{ display: 'contents' }}>
 									<div className="text-end pe-4 py-0.5 opacity-75">Phone</div>
 									<div className="py-0.5">
 										<a href={`tel:${settings.phone}`} className="hover:opacity-75 transition">{settings.phone}</a>
