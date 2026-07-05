@@ -11,7 +11,11 @@ const ARTIST_FIELDS = `
   isAcceptingNewClients, promo,
   onlineBookingLink, textBookingPhoneNumber, callBookingPhoneNumber,
   instagramLink, facebookLink,
-  serviceType, externalServicesLink,
+  gallery[] {
+    image,
+    caption
+  },
+  serviceType, externalServicesLink, isJuniorStylist, squareTeamMemberId,
   services[] {
     name,
     items[] { name, price, description }
@@ -19,9 +23,11 @@ const ARTIST_FIELDS = `
 `;
 
 export const HAIRSTYLIST_QUERY = `*[_type == "artist" && category == "hairstylists"]{${ARTIST_FIELDS}} | order(priority desc)`;
-
 export const AESTHETICIAN_QUERY = `*[_type == "artist" && category == "aestheticians"]{${ARTIST_FIELDS}} | order(priority desc)`;
-
 export const ARTIST_QUERY = `*[_type == "artist"]{${ARTIST_FIELDS}} | order(priority desc)`;
-
 export const ARTIST_BY_SLUG_QUERY = `*[_type == "artist" && slug.current == $slug][0]{${ARTIST_FIELDS}}`;
+
+// Server-only query — never use on frontend
+export const ARTIST_SQUARE_TOKEN_QUERY = `*[_type == "artist" && slug.current == $slug][0]{
+  squareAccessToken
+}`;

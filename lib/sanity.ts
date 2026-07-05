@@ -11,7 +11,7 @@ export const sanityClient = createClient({
 });
 
 export const getCachedSiteSettings = unstable_cache(
-  async () => sanityClient.fetch(SITE_SETTINGS_QUERY),
+  async () => sanityClient.fetch(SITE_SETTINGS_QUERY, {}, { next: { tags: ['sanity'] } }),
   ['site-settings'],
-  { revalidate: 3600 }
+  { revalidate: 3600, tags: ['sanity'] }
 );

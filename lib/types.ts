@@ -39,7 +39,7 @@ export type Artist = {
 	role: string;
 	category: 'hairstylists' | 'aestheticians';
 	priority: number;
-	image: any; // SanityImageSource
+	image: any;
 	bio: string;
 	slug: { current: string };
 	isAcceptingNewClients: boolean;
@@ -49,7 +49,14 @@ export type Artist = {
 	callBookingPhoneNumber?: string;
 	instagramLink?: string;
 	facebookLink?: string;
-	serviceType?: 'local' | 'external';
+	gallery?: {
+		image: any;
+		caption?: string;
+	}[];
+	serviceType?: 'local' | 'external' | 'square';
 	externalServicesLink?: string;
 	services?: ServiceGroup[];
+	// squareAccessToken intentionally omitted — never exposed to frontend
+	squareTeamMemberId?: string;
+	isJuniorStylist?: boolean;
 };

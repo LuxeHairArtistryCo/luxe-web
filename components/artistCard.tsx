@@ -10,8 +10,7 @@ type Props = {
 export default function ArtistCard({ artist, index }: Props) {
 	const isEven = index % 2 === 0;
 	const basePath = artist.category === "hairstylists" ? "/hairstylists" : "/aestheticians";
-	const href = artist.slug?.current ? `${basePath}/${artist.slug.current}` : null;
-
+	const href = artist.slug?.current ? `/${artist.category}/${artist.slug.current}` : null;
 	const hasBooking =
 		artist.isAcceptingNewClients !== false &&
 		(artist.onlineBookingLink || artist.textBookingPhoneNumber || artist.callBookingPhoneNumber);
