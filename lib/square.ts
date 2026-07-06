@@ -6,7 +6,7 @@
 // runtime.
 
 export type SquareMoney = {
-	amount: number; awewa
+	amount: number;
 	currency?: string;
 };
 

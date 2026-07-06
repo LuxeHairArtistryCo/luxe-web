@@ -4,9 +4,10 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "eslint && next build",
+    "build": "eslint && tsc --noEmit && next build",
     "start": "next start",
     "lint": "eslint",
+    "typecheck": "tsc --noEmit",
     "prepare": "husky"
   },
   "dependencies": {
