@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { sanityClient } from '@/lib/sanity';
 import { ARTIST_SQUARE_TOKEN_QUERY } from '@/lib/queries';
 import { ServiceGroup } from '@/lib/types';
-import { unstable_cache } from 'next/cache';
+import { SquareCatalogListResponse } from '@/lib/square';
 
 async function fetchSquareServices(accessToken: string): Promise<ServiceGroup[]> {
 	// Fetch all catalog items from Square
@@ -19,23 +19,23 @@ async function fetchSquareServices(accessToken: string): Promise<ServiceGroup[]>
 		throw new Error(`Square API error: ${response.status}`);
 	}
 
-	const data = await response.json();
+	const data = await response.json() as SquareCatalogListResponse;
 	const objects = data.objects ?? [];
 
 	// Separate categories and items
-	const categories = objects.filter((o: any) => o.type === 'CATEGORY');
-	const items = objects.filter((o: any) => o.type === 'ITEM');
+	const categories = objects.filter((o) => o.type === 'CATEGORY');
+	const items = objects.filter((o) => o.type === 'ITEM');
 
 	// Build a category map
 	const categoryMap: Record<string, string> = {};
-	categories.forEach((cat: any) => {
+	categories.forEach((cat) => {
 		categoryMap[cat.id] = cat.category_data?.name ?? 'Other';
 	});
 
 	// Group items by category
 	const grouped: Record<string, ServiceGroup> = {};
 
-	items.forEach((item: any) => {
+	items.forEach((item) => {
 		const itemData = item.item_data;
 		if (!itemData) return;
 
@@ -48,7 +48,7 @@ async function fetchSquareServices(accessToken: string): Promise<ServiceGroup[]>
 
 		// Each item can have multiple variations (e.g. different lengths/prices)
 		const variations = itemData.variations ?? [];
-		variations.forEach((variation: any) => {
+		variations.forEach((variation) => {
 			const variationData = variation.item_variation_data;
 			if (!variationData) return;
 

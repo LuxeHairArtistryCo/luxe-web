@@ -1,3 +1,5 @@
+import type { SanityImageSource } from "@sanity/image-url";
+
 export type HoursEntry = {
 	day: string;
 	hours: string;
@@ -5,8 +7,8 @@ export type HoursEntry = {
 
 export type SiteSettings = {
 	companyName: string;
-	logo?: any;
-	favicon?: any;
+	logo?: SanityImageSource;
+	favicon?: SanityImageSource;
 	tagline?: string;
 	heroSubtext?: string;
 	seoDescription?: string;
@@ -39,7 +41,7 @@ export type Artist = {
 	role: string;
 	category: 'hairstylists' | 'aestheticians';
 	priority: number;
-	image: any;
+	image: SanityImageSource;
 	bio: string;
 	slug: { current: string };
 	isAcceptingNewClients: boolean;
@@ -50,7 +52,7 @@ export type Artist = {
 	instagramLink?: string;
 	facebookLink?: string;
 	gallery?: {
-		image: any;
+		image: SanityImageSource;
 		caption?: string;
 	}[];
 	serviceType?: 'local' | 'external' | 'square';

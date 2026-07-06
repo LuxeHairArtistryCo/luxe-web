@@ -9,7 +9,6 @@ type Props = {
 
 export default function ArtistCard({ artist, index }: Props) {
 	const isEven = index % 2 === 0;
-	const basePath = artist.category === "hairstylists" ? "/hairstylists" : "/aestheticians";
 	const href = artist.slug?.current ? `/${artist.category}/${artist.slug.current}` : null;
 	const hasBooking =
 		artist.isAcceptingNewClients !== false &&
@@ -63,7 +62,7 @@ export default function ArtistCard({ artist, index }: Props) {
 							<div style={{
 								display: "-webkit-box",
 								WebkitBoxOrient: "vertical" as const,
-								WebkitLineClamp: "var(--bio-clamp)" as any,
+								WebkitLineClamp: "var(--bio-clamp)",
 								overflow: "hidden",
 							}}>
 								{artist.bio}

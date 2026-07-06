@@ -2,10 +2,11 @@
 
 import Image from "next/image";
 import { useRef } from "react";
+import type { SanityImageSource } from "@sanity/image-url";
 import { urlFor } from "@/lib/image";
 
 type GalleryImage = {
-	image: any;
+	image: SanityImageSource;
 	caption?: string;
 };
 

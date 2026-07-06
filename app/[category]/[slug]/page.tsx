@@ -6,6 +6,7 @@ import { sanityClient } from "@/lib/sanity";
 import { Artist, ServiceGroup } from "@/lib/types";
 import { ARTIST_BY_SLUG_QUERY, ARTIST_SQUARE_TOKEN_QUERY } from "@/lib/queries";
 import { urlFor } from "@/lib/image";
+import { SquareCatalogListResponse } from "@/lib/square";
 import StickyBookingBar from "@/components/stickyBookingBar";
 import ImageCarousel from "@/components/imageCarousel";
 
@@ -46,21 +47,21 @@ async function getSquareServices(slug: string, teamMemberId?: string, isJuniorSt
 			return [];
 		}
 
-		const itemsData = await itemsResponse.json();
+		const itemsData = await itemsResponse.json() as SquareCatalogListResponse;
 		const allItems = itemsData.objects ?? [];
 
 		// Filter to appointment services only
-		const serviceItems = allItems.filter((o: any) =>
+		const serviceItems = allItems.filter((o) =>
 			o.type === 'ITEM' &&
 			o.item_data?.product_type === 'APPOINTMENTS_SERVICE'
 		);
 
 		// Collect all unique category IDs from service items
 		const categoryIds = [...new Set(
-			serviceItems.flatMap((item: any) =>
-				(item.item_data?.categories ?? []).map((c: any) => c.id)
+			serviceItems.flatMap((item) =>
+				(item.item_data?.categories ?? []).map((c) => c.id)
 			)
-		)] as string[];
+		)];
 
 		// Fetch category details in batch to get names and ordinals
 		const categoryMap: Record<string, string> = {};
@@ -72,11 +73,11 @@ async function getSquareServices(slug: string, teamMemberId?: string, isJuniorSt
 				headers,
 				body: JSON.stringify({ object_ids: categoryIds }),
 				next: { revalidate: 3600 },
-			} as any);
+			});
 
 			if (batchResponse.ok) {
-				const batchData = await batchResponse.json();
-				(batchData.objects ?? []).forEach((cat: any) => {
+				const batchData = await batchResponse.json() as SquareCatalogListResponse;
+				(batchData.objects ?? []).forEach((cat) => {
 					categoryMap[cat.id] = cat.category_data?.name ?? 'Other Services';
 					categoryOrdinalMap[cat.id] = cat.category_data?.ordinal ?? 999;
 				});
@@ -86,7 +87,7 @@ async function getSquareServices(slug: string, teamMemberId?: string, isJuniorSt
 		// Group items by category
 		const grouped: Record<string, ServiceGroup> = {};
 
-		serviceItems.forEach((item: any) => {
+		serviceItems.forEach((item) => {
 			const itemData = item.item_data;
 			if (!itemData) return;
 
@@ -102,22 +103,22 @@ async function getSquareServices(slug: string, teamMemberId?: string, isJuniorSt
 			// Filter variations: by team member ID if set, otherwise by junior stylist toggle, otherwise show all
 			let filteredVariations = variations;
 			if (teamMemberId) {
-				filteredVariations = variations.filter((v: any) =>
+				filteredVariations = variations.filter((v) =>
 					v.item_variation_data?.team_member_ids?.includes(teamMemberId)
 				);
 			} else if (isJuniorStylist !== undefined) {
 				filteredVariations = isJuniorStylist
-					? variations.filter((v: any) =>
+					? variations.filter((v) =>
 						v.item_variation_data?.name?.toLowerCase().includes('junior')
 					)
-					: variations.filter((v: any) =>
+					: variations.filter((v) =>
 						!v.item_variation_data?.name?.toLowerCase().includes('junior')
 					);
 			}
 
 			if (filteredVariations.length === 0) return;
 
-			filteredVariations.forEach((variation: any) => {
+			filteredVariations.forEach((variation) => {
 				const variationData = variation.item_variation_data;
 				if (!variationData) return;
 
