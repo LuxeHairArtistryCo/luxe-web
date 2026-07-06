@@ -175,8 +175,14 @@ export default async function ArtistPage({ params }: Props) {
 
 	const servicesToShow: ServiceGroup[] =
 		artist.serviceType === 'square' ? squareServices :
-			artist.serviceType === 'local' ? (artist.services ?? []) :
-				[];
+			artist.serviceType === 'local'
+				? (artist.services ?? [])
+					// Sanity returns `items: null` for a service group with no items
+					// added yet — normalize to [] and drop empty groups entirely so
+					// we never render a category heading with nothing under it.
+					.map((group) => ({ ...group, items: group.items ?? [] }))
+					.filter((group) => group.items.length > 0)
+				: [];
 
 	return (
 		<>
