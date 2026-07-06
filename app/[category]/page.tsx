@@ -21,7 +21,7 @@ type Props = {
 };
 
 async function getArtists(category: string): Promise<Artist[]> {
-	return await sanityClient.fetch(CATEGORY_QUERIES[category], {}, { next: { tags: ['sanity'] } });
+	return await sanityClient.fetch<Artist[]>(CATEGORY_QUERIES[category], {}, { next: { tags: ['sanity'] } });
 }
 
 export default async function CategoryPage({ params }: Props) {

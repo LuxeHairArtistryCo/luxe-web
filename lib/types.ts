@@ -5,12 +5,22 @@ export type HoursEntry = {
 	hours: string;
 };
 
+export type KeyService = {
+	name: string;
+	description?: string;
+};
+
 export type SiteSettings = {
 	companyName: string;
 	logo?: SanityImageSource;
 	favicon?: SanityImageSource;
 	tagline?: string;
 	heroSubtext?: string;
+	heroImages?: SanityImageSource[];
+	homeAboutText?: string;
+	keyServices?: KeyService[];
+	aboutImage?: SanityImageSource;
+	aboutText?: string;
 	seoDescription?: string;
 	announcementBanner?: string;
 	phone?: string;
@@ -61,4 +71,21 @@ export type Artist = {
 	// squareAccessToken intentionally omitted — never exposed to frontend
 	squareTeamMemberId?: string;
 	isJuniorStylist?: boolean;
+};
+
+// Result shape of ARTIST_SQUARE_TOKEN_QUERY — server-only, never sent to the client
+export type ArtistSquareToken = {
+	squareAccessToken?: string;
+} | null;
+
+// Lightweight shape for the home page's promo teaser — matches
+// ARTISTS_WITH_PROMO_QUERY's smaller field set, not the full Artist type.
+export type ArtistPromoTeaser = {
+	_id: string;
+	name: string;
+	role: string;
+	category: 'hairstylists' | 'aestheticians';
+	image: SanityImageSource;
+	slug: { current: string };
+	promo: string;
 };

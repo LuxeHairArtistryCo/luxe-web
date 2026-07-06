@@ -3,7 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { FaInstagram, FaFacebook } from "react-icons/fa";
 import { sanityClient } from "@/lib/sanity";
-import { Artist, ServiceGroup } from "@/lib/types";
+import { Artist, ArtistSquareToken, ServiceGroup } from "@/lib/types";
 import { ARTIST_BY_SLUG_QUERY, ARTIST_SQUARE_TOKEN_QUERY } from "@/lib/queries";
 import { urlFor } from "@/lib/image";
 import { SquareCatalogListResponse } from "@/lib/square";
@@ -22,11 +22,11 @@ type Props = {
 };
 
 async function getArtist(slug: string): Promise<Artist | null> {
-	return await sanityClient.fetch(ARTIST_BY_SLUG_QUERY, { slug }, { next: { tags: ['sanity'] } });
+	return await sanityClient.fetch<Artist | null>(ARTIST_BY_SLUG_QUERY, { slug }, { next: { tags: ['sanity'] } });
 }
 
 async function getSquareServices(slug: string, teamMemberId?: string, isJuniorStylist?: boolean): Promise<ServiceGroup[]> {
-	const result = await sanityClient.fetch(ARTIST_SQUARE_TOKEN_QUERY, { slug }, { next: { tags: ['sanity'] } });
+	const result = await sanityClient.fetch<ArtistSquareToken>(ARTIST_SQUARE_TOKEN_QUERY, { slug }, { next: { tags: ['sanity'] } });
 	if (!result?.squareAccessToken) return [];
 
 	const headers = {

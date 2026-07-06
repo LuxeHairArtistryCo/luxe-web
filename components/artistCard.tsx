@@ -59,6 +59,10 @@ export default function ArtistCard({ artist, index }: Props) {
 								color: "var(--color-dark)",
 							}}
 						>
+							{/* --bio-clamp (defined in globals.css) is a responsive line-clamp
+							    count that grows at wider mobile breakpoints so more of the bio
+							    shows without a fixed line count looking wrong on every screen
+							    size. See README "Conventions" for more. */}
 							<div style={{
 								display: "-webkit-box",
 								WebkitBoxOrient: "vertical" as const,

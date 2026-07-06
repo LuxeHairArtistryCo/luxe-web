@@ -17,6 +17,11 @@ export default function Footer({ settings }: Props) {
 						<div className="order-1 md:order-2">
 							<h3 className="font-bold mb-2">Hours of Operation</h3>
 							<div className="grid grid-cols-2 text-sm">
+								{/* display: 'contents' lets each entry's two divs participate
+								    directly in the parent grid, as if this wrapper weren't there.
+								    Set as an inline style (not a Tailwind class) because a plain
+								    className="contents" was unreliable on mobile Chrome. See
+								    README "Conventions" for more. */}
 								{hours.map((entry, i) => (
 									<div key={i} style={{ display: 'contents' }}>
 										<div className="text-end pe-4 py-0.5 opacity-75">{entry.day}</div>

@@ -1,5 +1,6 @@
 export const SITE_SETTINGS_QUERY = `*[_type == "siteSettings"][0]{
-  companyName, logo, favicon, tagline, heroSubtext,
+  companyName, logo, favicon, tagline, heroSubtext, heroImages,
+  homeAboutText, keyServices, aboutImage, aboutText,
   seoDescription, announcementBanner,
   phone, addressLine1, addressLine2,
   hours, instagramLink, facebookLink,
@@ -31,3 +32,8 @@ export const ARTIST_BY_SLUG_QUERY = `*[_type == "artist" && slug.current == $slu
 export const ARTIST_SQUARE_TOKEN_QUERY = `*[_type == "artist" && slug.current == $slug][0]{
   squareAccessToken
 }`;
+
+// Home page — artists currently running a promo, lightweight field set only
+export const ARTISTS_WITH_PROMO_QUERY = `*[_type == "artist" && defined(promo) && promo != ""]{
+  _id, name, role, category, image, slug, promo
+} | order(priority desc)`;

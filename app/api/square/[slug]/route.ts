@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { sanityClient } from '@/lib/sanity';
 import { ARTIST_SQUARE_TOKEN_QUERY } from '@/lib/queries';
-import { ServiceGroup } from '@/lib/types';
+import { ArtistSquareToken, ServiceGroup } from '@/lib/types';
 import { SquareCatalogListResponse } from '@/lib/square';
 
 async function fetchSquareServices(accessToken: string): Promise<ServiceGroup[]> {
@@ -80,7 +80,7 @@ export async function GET(
 	const { slug } = await params;
 
 	// Fetch the access token server-side from Sanity
-	const result = await sanityClient.fetch(ARTIST_SQUARE_TOKEN_QUERY, { slug }, { next: { tags: ['sanity'] } });
+	const result = await sanityClient.fetch<ArtistSquareToken>(ARTIST_SQUARE_TOKEN_QUERY, { slug }, { next: { tags: ['sanity'] } });
 
 	if (!result?.squareAccessToken) {
 		return NextResponse.json({ error: 'No Square token configured' }, { status: 404 });
