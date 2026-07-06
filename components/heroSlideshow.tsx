@@ -46,6 +46,7 @@ export default function HeroSlideshow({ images, tagline, subtext, ctaText, ctaLi
 						fill
 						sizes="100vw"
 						priority={i === 0}
+						loading={i === 0 ? "eager" : "lazy"}
 						className="object-cover"
 					/>
 				</div>

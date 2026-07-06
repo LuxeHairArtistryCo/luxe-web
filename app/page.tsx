@@ -35,24 +35,28 @@ export default async function HomePage() {
 							<Link
 								key={artist._id}
 								href={`/${artist.category}/${artist.slug.current}`}
-								className="flex flex-col overflow-hidden hover:opacity-90 transition"
+								className="flex items-start gap-4 overflow-hidden hover:opacity-90 transition p-3"
 								style={{ border: "1px solid var(--color-dark-10)", borderRadius: "1rem", background: "var(--color-tertiary)" }}
 							>
-								<div style={{ position: "relative", width: "100%", aspectRatio: "4/3" }}>
+								{/* Sized closer to the artist card's photo proportion (40% width,
+								    2:3) rather than a tiny fixed thumbnail — still smaller than a
+								    full-width hero so the promo text stays the focus. */}
+								<div className="shrink-0" style={{ position: "relative", width: "38%", aspectRatio: "2/3", borderRadius: "0.5rem", overflow: "hidden", background: "var(--color-secondary)" }}>
 									<Image
-										src={urlFor(artist.image).width(500).height(375).fit("crop").url()}
+										src={urlFor(artist.image).width(300).height(450).fit("crop").url()}
 										alt={artist.name}
 										fill
-										sizes="(max-width: 768px) 100vw, 33vw"
+										sizes="(max-width: 768px) 38vw, 120px"
 										className="object-cover"
 									/>
 								</div>
-								<div className="px-4 py-3" style={{ background: "var(--color-promo)" }}>
-									<p className="m-0 text-white text-sm font-semibold">{artist.promo}</p>
-								</div>
-								<div className="px-4 py-2">
-									<p className="m-0 text-sm font-bold" style={{ color: "var(--color-dark)" }}>{artist.name}</p>
-									<p className="m-0 text-xs" style={{ color: "var(--color-dark-66)" }}>{artist.role}</p>
+								<div className="flex-1 min-w-0 flex flex-col gap-2">
+									<p className="m-0 text-sm font-bold leading-snug" style={{ color: "var(--color-dark)" }}>{artist.promo}</p>
+									{/* Name — same green pill treatment used on artist cards and
+									    slug pages, for consistency wherever a name appears. */}
+									<div className="inline-block px-3 py-1 rounded-full self-start max-w-full" style={{ background: "var(--color-primary)" }}>
+										<p className="m-0 text-white text-xs font-semibold truncate">{artist.name} — {artist.role}</p>
+									</div>
 								</div>
 							</Link>
 						))}

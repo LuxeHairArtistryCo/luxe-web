@@ -1,6 +1,7 @@
 import Image from 'next/image'
 import { SiteSettings } from '@/lib/types'
 import { urlFor } from '@/lib/image'
+import { formatPhoneNumber } from '@/lib/format'
 
 type Props = { settings: SiteSettings }
 
@@ -52,7 +53,7 @@ export default function Footer({ settings }: Props) {
 								<div style={{ display: 'contents' }}>
 									<div className="text-end pe-4 py-0.5 opacity-75">Phone</div>
 									<div className="py-0.5">
-										<a href={`tel:${settings.phone}`} className="hover:opacity-75 transition">{settings.phone}</a>
+										<a href={`tel:${settings.phone}`} className="hover:opacity-75 transition">{formatPhoneNumber(settings.phone)}</a>
 									</div>
 								</div>
 							)}

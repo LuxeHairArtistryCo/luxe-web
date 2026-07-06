@@ -7,6 +7,7 @@ import { Artist, ArtistSquareToken, ServiceGroup } from "@/lib/types";
 import { ARTIST_BY_SLUG_QUERY, ARTIST_SQUARE_TOKEN_QUERY } from "@/lib/queries";
 import { urlFor } from "@/lib/image";
 import { SquareCatalogListResponse } from "@/lib/square";
+import { formatPhoneNumber } from "@/lib/format";
 import StickyBookingBar from "@/components/stickyBookingBar";
 import ImageCarousel from "@/components/imageCarousel";
 
@@ -204,18 +205,18 @@ export default async function ArtistPage({ params }: Props) {
 					{/* Info */}
 					<div className="flex flex-col gap-4 justify-start flex-1">
 
+						{/* Name + Role */}
+						<div className="px-4 py-3" style={{ background: "var(--color-primary)", borderRadius: "0.5rem" }}>
+							<h1 className="m-0 text-white font-bold text-2xl leading-snug">{artist.name}</h1>
+							<p className="m-0 text-white text-sm mt-1" style={{ opacity: 0.9 }}>{artist.role}</p>
+						</div>
+
 						{/* Promo */}
 						{artist.promo && (
 							<div className="px-4 py-3 text-sm font-semibold text-white text-center" style={{ background: "var(--color-promo)", borderRadius: "0.5rem" }}>
 								{artist.promo}
 							</div>
 						)}
-
-						{/* Name + Role */}
-						<div className="px-4 py-3" style={{ background: "var(--color-primary)", borderRadius: "0.5rem" }}>
-							<h1 className="m-0 text-white font-bold text-2xl leading-snug">{artist.name}</h1>
-							<p className="m-0 text-white text-sm mt-1" style={{ opacity: 0.9 }}>{artist.role}</p>
-						</div>
 
 						{/* Not accepting */}
 						{!artist.isAcceptingNewClients && (
@@ -224,50 +225,76 @@ export default async function ArtistPage({ params }: Props) {
 							</p>
 						)}
 
-						{/* Desktop booking buttons */}
+						{/* Desktop booking buttons — phone number shown under Text/Call so
+						    clients (particularly older ones) can jot it down instead of
+						    relying on the tel:/sms: link working on their device. */}
 						{hasBooking && (
-							<div className="hidden md:flex flex-wrap gap-2">
+							<div className="hidden md:flex flex-wrap gap-3">
 								{artist.onlineBookingLink && (
 									<a href={artist.onlineBookingLink} target="_blank" rel="noopener noreferrer" className="text-white text-sm px-4 py-2 rounded transition hover:opacity-90" style={{ background: "var(--color-primary)" }}>
 										Book Online
 									</a>
 								)}
 								{artist.textBookingPhoneNumber && (
-									<a href={`sms:${artist.textBookingPhoneNumber}`} className="text-white text-sm px-4 py-2 rounded transition hover:opacity-90" style={{ background: "var(--color-dark)" }}>
+									<a href={`sms:${artist.textBookingPhoneNumber}`} className="flex flex-col items-center text-white text-sm px-4 py-2 rounded transition hover:opacity-90" style={{ background: "var(--color-dark)" }}>
 										Text to Book
+										<span className="text-xs" style={{ opacity: 0.85 }}>{formatPhoneNumber(artist.textBookingPhoneNumber)}</span>
 									</a>
 								)}
 								{artist.callBookingPhoneNumber && (
-									<a href={`tel:${artist.callBookingPhoneNumber}`} className="text-white text-sm px-4 py-2 rounded transition hover:opacity-90" style={{ background: "var(--color-dark)" }}>
+									<a href={`tel:${artist.callBookingPhoneNumber}`} className="flex flex-col items-center text-white text-sm px-4 py-2 rounded transition hover:opacity-90" style={{ background: "var(--color-dark)" }}>
 										Call to Book
+										<span className="text-xs" style={{ opacity: 0.85 }}>{formatPhoneNumber(artist.callBookingPhoneNumber)}</span>
 									</a>
 								)}
 							</div>
 						)}
 
-						{/* Social links */}
-						{(artist.instagramLink || artist.facebookLink) && (
-							<div className="flex gap-4 items-center">
-								{artist.instagramLink && (
-									<a href={artist.instagramLink} target="_blank" rel="noopener noreferrer" className="hover:opacity-75 transition" style={{ color: "var(--color-dark)" }} aria-label="Instagram">
-										<FaInstagram size={28} />
-									</a>
-								)}
-								{artist.facebookLink && (
-									<a href={artist.facebookLink} target="_blank" rel="noopener noreferrer" className="hover:opacity-75 transition" style={{ color: "var(--color-dark)" }} aria-label="Facebook">
-										<FaFacebook size={28} />
-									</a>
-								)}
+						{/* Bio — desktop only. Fills the empty space beside the photo
+						    instead of repeating full-width below the hero row. */}
+						<div className="hidden md:block mt-2">
+							<h2 className="text-xl font-bold mb-4" style={{ color: "var(--color-dark)" }}>About</h2>
+							<div className="px-4 py-3 text-sm leading-relaxed" style={{ background: "var(--color-tertiary)", border: "1px solid var(--color-dark-10)", borderRadius: "0.5rem", color: "var(--color-dark)", whiteSpace: "pre-line" }}>
+								{artist.bio}
 							</div>
-						)}
+						</div>
 					</div>
 				</div>
 
-				{/* Bio */}
-				<div className="mt-6 px-4 py-3 text-sm leading-relaxed" style={{ background: "var(--color-tertiary)", border: "1px solid var(--color-dark-10)", borderRadius: "0.5rem", color: "var(--color-dark)", whiteSpace: "pre-line" }}>
-					<h2 className="font-bold text-base mb-2" style={{ color: "var(--color-dark)" }}>About</h2>
-					{artist.bio}
+				{/* Bio — mobile only (see desktop version inside the hero row above) */}
+				<div className="mt-6 md:hidden">
+					<h2 className="text-xl font-bold mb-4" style={{ color: "var(--color-dark)" }}>About</h2>
+					<div className="px-4 py-3 text-sm leading-relaxed" style={{ background: "var(--color-tertiary)", border: "1px solid var(--color-dark-10)", borderRadius: "0.5rem", color: "var(--color-dark)", whiteSpace: "pre-line" }}>
+						{artist.bio}
+					</div>
 				</div>
+
+				{/* Gallery */}
+				{artist.gallery && artist.gallery.length > 0 && (
+					<ImageCarousel gallery={artist.gallery} />
+				)}
+
+				{/* Social links — placed after the gallery as a prompt to see more
+				    photos, centered and sized up on mobile so they're easy to tap. */}
+				{(artist.instagramLink || artist.facebookLink) && (
+					<div className="mt-6 flex flex-col items-center gap-3 text-center">
+						<p className="m-0 text-sm font-semibold" style={{ color: "var(--color-dark-66)" }}>
+							See more photos on social media
+						</p>
+						<div className="flex justify-center items-center gap-6">
+							{artist.instagramLink && (
+								<a href={artist.instagramLink} target="_blank" rel="noopener noreferrer" className="hover:opacity-75 transition" style={{ color: "var(--color-dark)" }} aria-label="Instagram">
+									<FaInstagram className="w-9 h-9 md:w-7 md:h-7" />
+								</a>
+							)}
+							{artist.facebookLink && (
+								<a href={artist.facebookLink} target="_blank" rel="noopener noreferrer" className="hover:opacity-75 transition" style={{ color: "var(--color-dark)" }} aria-label="Facebook">
+									<FaFacebook className="w-9 h-9 md:w-7 md:h-7" />
+								</a>
+							)}
+						</div>
+					</div>
+				)}
 
 				{/* Services */}
 				{(artist.serviceType === 'external' || artist.serviceType === 'local' || artist.serviceType === 'square') && (
@@ -313,11 +340,6 @@ export default async function ArtistPage({ params }: Props) {
 							</p>
 						)}
 					</div>
-				)}
-
-				{/* Gallery */}
-				{artist.gallery && artist.gallery.length > 0 && (
-					<ImageCarousel gallery={artist.gallery} />
 				)}
 
 			</main>

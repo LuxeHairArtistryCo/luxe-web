@@ -24,6 +24,8 @@ export default function Header({ settings }: Props) {
 							width={188}
 							height={75}
 							style={{ width: "auto", height: "75px" }}
+							priority
+							loading="eager"
 						/>
 						: <span className="text-xl font-bold text-white">{settings.companyName}</span>
 					}

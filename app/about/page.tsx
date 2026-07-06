@@ -1,6 +1,7 @@
 import Image from "next/image";
 import { getCachedSiteSettings } from "@/lib/sanity";
 import { urlFor } from "@/lib/image";
+import { formatPhoneNumber } from "@/lib/format";
 
 export default async function AboutPage() {
 	const settings = await getCachedSiteSettings();
@@ -59,7 +60,7 @@ export default async function AboutPage() {
 									{settings.addressLine2 && <p className="m-0">{settings.addressLine2}</p>}
 									{settings.phone && (
 										<p className="m-0 mt-2">
-											<a href={`tel:${settings.phone}`} className="hover:opacity-75 transition" style={{ color: "var(--color-primary)" }}>{settings.phone}</a>
+											<a href={`tel:${settings.phone}`} className="hover:opacity-75 transition" style={{ color: "var(--color-primary)" }}>{formatPhoneNumber(settings.phone)}</a>
 										</p>
 									)}
 								</div>

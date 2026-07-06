@@ -34,7 +34,13 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           </div>
         )}
         <Header settings={settings} />
-        <main className="flex-1">
+        {/* z-10 keeps this flex item's stacking context above Footer's. Since
+            <body> is a flex container, each direct child (Header/main/Footer)
+            gets its own implicit stacking context — without this, Footer
+            (later in DOM order) painted over the position:fixed sticky
+            booking bar nested inside <main>, even though it's visually at
+            the bottom of the screen. */}
+        <main className="flex-1 relative z-10">
           {children}
         </main>
         <Footer settings={settings} />
