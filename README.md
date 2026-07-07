@@ -12,6 +12,7 @@ NEXT_PUBLIC_SANITY_DATASET=
 NEXT_PUBLIC_SANITY_API_VERSION=
 NEXT_PUBLIC_SITE_URL=
 REVALIDATE_SECRET=
+SQUARE_WEBHOOK_SIGNATURE_KEY=
 ```
 
 Then:
@@ -35,7 +36,7 @@ Open [http://localhost:3000](http://localhost:3000). Content changes made in San
 
 ## Committing changes
 
-A Git pre-commit hook (via [Husky](https://typicode.github.io/husky/)) runs `npm run lint && npm run typecheck` automatically on every `git commit`. If either fails, the commit is blocked and the errors print in your terminal — fix them and commit again. Warnings (like the pre-launch TODO in `app/api/revalidate/route.ts`) don't block anything.
+A Git pre-commit hook (via [Husky](https://typicode.github.io/husky/)) runs `npm run lint && npm run typecheck` automatically on every `git commit`. If either fails, the commit is blocked and the errors print in your terminal — fix them and commit again. Warnings (like a stray `TODO`/`FIXME` comment, flagged by the `no-warning-comments` rule in `eslint.config.mjs`) don't block anything.
 
 If Husky ever isn't firing, run `npm install` again (it wires itself up via the `prepare` script) and check `git config core.hooksPath` returns `.husky/_`.
 
@@ -48,17 +49,35 @@ To skip the hook in a genuine emergency: `git commit --no-verify`.
 Sanity content (artists, site settings, etc.) is cached indefinitely by Next.js — it does **not** re-fetch on a timer. Two ways it becomes fresh:
 
 1. **A new deploy** (any push to `main`/`preview` triggers a Vercel rebuild, which always has current content).
-2. **Sanity's webhook** hits `/api/revalidate` whenever content is published, which tells Next.js to drop the cached content immediately. This is configured in Sanity at [sanity.io/manage](https://www.sanity.io/manage) → this project → API → Webhooks.
+2. **Sanity's webhook** hits `/api/revalidate-sanity` whenever content is published, which tells Next.js to drop the cached content immediately.
 
-The webhook sends a `x-revalidate-secret` header (not a URL query param — kept out of logs/history on purpose) that must match `REVALIDATE_SECRET`. If content updates aren't showing up on the live site, check the webhook's "Attempts" log in Sanity's dashboard first — it shows the actual HTTP response your site sent back.
+This is configured as **two separate webhook subscriptions** in Sanity at [sanity.io/manage](https://www.sanity.io/manage) → this project → API → Webhooks — one with the production domain as its URL, one with the preview domain — so both environments pick up content changes right away, not just whichever one happens to get redeployed next. Each subscription should have:
 
-> **Pre-launch TODO:** the webhook currently points at the preview domain for testing. Before switching `luxehairartistry.ca` over to production, update the webhook URL in Sanity and confirm `REVALIDATE_SECRET` is set under the **Production** environment in Vercel (not just Preview). See the comment at the top of `app/api/revalidate/route.ts`.
+- **URL:** `https://<domain>/api/revalidate-sanity` (production or preview domain respectively)
+- **HTTP method:** GET
+- **HTTP headers:** `x-revalidate-secret` set to that environment's secret
+
+The webhook sends that secret as a header (not a URL query param — kept out of logs/history on purpose), which must match `REVALIDATE_SECRET`. Same trick as the Square webhooks below: one env var name, but a **different value under Vercel's Production vs Preview environments**, matching whichever domain's webhook is calling in. If content updates aren't showing up on the live site, check that webhook's "Attempts" log in Sanity's dashboard first — it shows the actual HTTP response your site sent back (a 401 usually means the secret in Sanity doesn't match what's set in Vercel for that environment).
+
+## Square services & the Square webhook
+
+An artist's services come from Square's Catalog API when `serviceType` is `square` (see `getSquareServices()` in `app/[category]/[slug]/page.tsx`). Square's catalog data is cached for up to an hour (`revalidate: 3600`) as a fallback, but also tagged `square` so it can be dropped immediately:
+
+Square fires a `catalog.version.updated` webhook to `/api/revalidate-square` whenever catalog data changes (new service, price change, team member assignment, etc.), which calls `revalidateTag('square')` so the next page load gets fresh data instead of waiting out the hour.
+
+This is configured as **two separate webhook subscriptions** in the [Square Developer Console](https://developer.squareup.com/apps) (your app → Webhooks) — one with the production domain as its notification URL, one with the preview domain — so both environments stay in sync, not just whichever one you remember to update. Each subscription needs:
+
+- **Notification URL:** `https://<domain>/api/revalidate-square` (production or preview domain respectively)
+- **Event:** `catalog.version.updated`
+- **API version:** matching what `getSquareServices()` sends (`2024-01-17`)
+
+Square generates its own signature key per subscription, used to verify requests came from Square (not a spoofed POST). Rather than hardcoding two keys, this reuses the same trick as `REVALIDATE_SECRET`: `SQUARE_WEBHOOK_SIGNATURE_KEY` is a single env var name, but set to a **different value under Vercel's Production vs Preview environments** — each holding the signature key Square generated for that domain's subscription. If Square catalog changes aren't showing up, check the subscription's notification attempts in the Square Developer Console first (mirrors the "Attempts" log advice for Sanity above) — a 401 there usually means the signing key doesn't match what's set in Vercel for that environment.
 
 ## Deployment
 
 - Hosted on Vercel, auto-deploys on push.
 - `preview` branch → `preview.luxehairartistry.ca` (has `X-Robots-Tag: noindex` via `vercel.json` so it doesn't get indexed).
-- Production domain (`luxehairartistry.ca`) is not yet cut over to this v2 site — see the pre-launch TODO above.
+- Production domain (`luxehairartistry.ca`) is not yet cut over to this v2 site. Both the Sanity and Square webhooks are already configured for it, though, so cutover is just a DNS/Vercel domain change — no webhook setup needed at that point.
 - Sanity Studio deploys separately, from `cms/`: `npm run deploy` there (not part of this repo's build).
 
 ## Conventions

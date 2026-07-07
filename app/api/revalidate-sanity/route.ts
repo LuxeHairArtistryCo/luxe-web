@@ -1,11 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { revalidateTag } from 'next/cache';
 
-// TODO (pre-launch): the Sanity webhook (sanity.io/manage -> API -> Webhooks)
-// currently points at https://preview.luxehairartistry.ca/api/revalidate for
-// testing. Before switching luxehairartistry.ca over to this Vercel deployment,
-// update the webhook's URL field to the production domain, and confirm
-// REVALIDATE_SECRET is set under the Production environment in Vercel.
+// Sanity is configured with TWO webhook subscriptions (sanity.io/manage ->
+// API -> Webhooks) — one pointing at the production domain, one at the
+// preview domain — so both environments get fresh content immediately
+// instead of waiting on the next deploy. Both subscriptions hit this same
+// route; there's no per-environment branching in code because Vercel already
+// scopes REVALIDATE_SECRET per environment (Production vs Preview), so each
+// deployment only accepts the header value matching its own webhook.
 export async function GET(request: NextRequest) {
 	// Secret is passed as a header (x-revalidate-secret) rather than a URL query
 	// param, so it doesn't end up in browser history, proxy logs, or analytics.

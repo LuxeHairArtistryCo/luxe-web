@@ -6,7 +6,7 @@ import { sanityClient } from "@/lib/sanity";
 import { Artist, ArtistSquareToken, ServiceGroup } from "@/lib/types";
 import { ARTIST_BY_SLUG_QUERY, ARTIST_SQUARE_TOKEN_QUERY } from "@/lib/queries";
 import { urlFor } from "@/lib/image";
-import { SquareCatalogListResponse } from "@/lib/square";
+import { SquareCatalogListResponse, SquareCatalogObject } from "@/lib/square";
 import { formatPhoneNumber } from "@/lib/format";
 import StickyBookingBar from "@/components/stickyBookingBar";
 import ImageCarousel from "@/components/imageCarousel";
@@ -37,19 +37,37 @@ async function getSquareServices(slug: string, teamMemberId?: string, isJuniorSt
 	};
 
 	try {
-		// Fetch all catalog items
-		const itemsResponse = await fetch('https://connect.squareup.com/v2/catalog/list?types=ITEM', {
-			headers,
-			next: { revalidate: 3600 },
-		});
+		// Fetch all catalog items — Square paginates catalog/list (a page tops
+		// out well short of a typical salon's full item count once modifiers,
+		// discounts, etc. share the same catalog), so we have to follow the
+		// `cursor` until it stops coming back or we silently drop everything
+		// past the first page.
+		const allItems: SquareCatalogObject[] = [];
+		let cursor: string | undefined;
 
-		if (!itemsResponse.ok) {
-			console.error('Square items error:', itemsResponse.status, await itemsResponse.text());
-			return [];
-		}
+		do {
+			const url = new URL('https://connect.squareup.com/v2/catalog/list');
+			url.searchParams.set('types', 'ITEM');
+			if (cursor) url.searchParams.set('cursor', cursor);
 
-		const itemsData = await itemsResponse.json() as SquareCatalogListResponse;
-		const allItems = itemsData.objects ?? [];
+			const itemsResponse = await fetch(url.toString(), {
+				headers,
+				// revalidate is a time-based fallback in case the webhook is ever
+				// missed; tags lets the Square webhook (see
+				// app/api/revalidate-square/route.ts) drop this immediately when
+				// catalog data actually changes, instead of waiting up to an hour.
+				next: { revalidate: 3600, tags: ['square'] },
+			});
+
+			if (!itemsResponse.ok) {
+				console.error('Square items error:', itemsResponse.status, await itemsResponse.text());
+				return [];
+			}
+
+			const itemsData = await itemsResponse.json() as SquareCatalogListResponse;
+			allItems.push(...(itemsData.objects ?? []));
+			cursor = itemsData.cursor;
+		} while (cursor);
 
 		// Filter to appointment services only
 		const serviceItems = allItems.filter((o) =>
@@ -73,14 +91,17 @@ async function getSquareServices(slug: string, teamMemberId?: string, isJuniorSt
 				method: 'POST',
 				headers,
 				body: JSON.stringify({ object_ids: categoryIds }),
-				next: { revalidate: 3600 },
+				next: { revalidate: 3600, tags: ['square'] },
 			});
 
 			if (batchResponse.ok) {
 				const batchData = await batchResponse.json() as SquareCatalogListResponse;
 				(batchData.objects ?? []).forEach((cat) => {
 					categoryMap[cat.id] = cat.category_data?.name ?? 'Other Services';
-					categoryOrdinalMap[cat.id] = cat.category_data?.ordinal ?? 999;
+					// Square nests the sibling-order value inside parent_category
+					// (even top-level categories have one, just without an id) —
+					// category_data itself has no top-level ordinal field.
+					categoryOrdinalMap[cat.id] = cat.category_data?.parent_category?.ordinal ?? 999;
 				});
 			}
 		}
@@ -104,6 +125,10 @@ async function getSquareServices(slug: string, teamMemberId?: string, isJuniorSt
 			// Filter variations: by team member ID if set, otherwise by junior stylist toggle, otherwise show all
 			let filteredVariations = variations;
 			if (teamMemberId) {
+				// A variation only shows up for this artist if they're explicitly
+				// listed in its team_member_ids — an empty/missing list means the
+				// variation isn't assigned to anyone via this field, not that it's
+				// open to everyone, so it must be excluded here.
 				filteredVariations = variations.filter((v) =>
 					v.item_variation_data?.team_member_ids?.includes(teamMemberId)
 				);
@@ -119,33 +144,42 @@ async function getSquareServices(slug: string, teamMemberId?: string, isJuniorSt
 
 			if (filteredVariations.length === 0) return;
 
-			filteredVariations.forEach((variation) => {
-				const variationData = variation.item_variation_data;
-				if (!variationData) return;
+			// Merge all bookable variations of this item into a single row —
+			// clients care about the service (e.g. "Haircut"), not Square's
+			// internal length/style variation breakdown, so instead of one line
+			// per variation we show one line with a price range spanning all of
+			// them (e.g. "$140.00–$700.00"), or a single price if they all match.
+			const format = (cents: number) => `$${(cents / 100).toFixed(2)}`;
+			const amounts = filteredVariations
+				.map((v) => v.item_variation_data?.price_money?.amount)
+				.filter((amount): amount is number => amount !== undefined);
 
-				const priceMoney = variationData.price_money;
-				const priceFormatted = priceMoney
-					? priceMoney.amount === 0
-						? 'Complimentary'
-						: `$${(priceMoney.amount / 100).toFixed(2)}`
-					: undefined;
+			let priceFormatted: string | undefined;
+			if (amounts.length > 0) {
+				const min = Math.min(...amounts);
+				const max = Math.max(...amounts);
+				priceFormatted = min === max
+					? (min === 0 ? 'Complimentary' : format(min))
+					: `${format(min)}–${format(max)}`;
+			}
 
-				const variationName = filteredVariations.length === 1
-					? itemData.name
-					: `${itemData.name} — ${variationData.name}`;
-
-				grouped[categoryId].items.push({
-					name: variationName,
-					price: priceFormatted,
-					description: itemData.description ?? undefined,
-				});
+			grouped[categoryId].items.push({
+				name: itemData.name,
+				price: priceFormatted,
+				description: itemData.description ?? undefined,
 			});
 		});
 
-		// Sort categories by Square's own ordinal value from category_data
+		// Sort categories by Square's configured order (category_data.parent_
+		// category.ordinal). Square doesn't appear to expose a reliable
+		// per-item order via the Catalog API, so items within a category are
+		// alphabetical.
 		return Object.keys(grouped)
 			.sort((a, b) => (categoryOrdinalMap[a] ?? 999) - (categoryOrdinalMap[b] ?? 999))
-			.map(id => grouped[id])
+			.map(id => ({
+				name: grouped[id].name,
+				items: [...grouped[id].items].sort((a, b) => a.name.localeCompare(b.name)),
+			}))
 			.filter(group => group.items.length > 0);
 
 	} catch (error) {

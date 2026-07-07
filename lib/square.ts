@@ -32,7 +32,14 @@ export type SquareItemData = {
 
 export type SquareCategoryData = {
 	name?: string;
-	ordinal?: number;
+	// Square nests a category's sibling-order position inside `parent_category`
+	// (even for top-level categories, which still have a parent_category object
+	// with no `id`) rather than at the top level of category_data — see
+	// https://developer.squareup.com/forums/t/category-and-sub-category-order-in-catalog-api/18693
+	parent_category?: {
+		id?: string;
+		ordinal?: number;
+	};
 };
 
 export type SquareCatalogObject = {
@@ -44,4 +51,7 @@ export type SquareCatalogObject = {
 
 export type SquareCatalogListResponse = {
 	objects?: SquareCatalogObject[];
+	// Present when there are more results than fit in one page — must be
+	// passed back as ?cursor= on the next request to get the rest.
+	cursor?: string;
 };

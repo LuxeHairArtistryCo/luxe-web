@@ -37,6 +37,7 @@ export default function ArtistCard({ artist, index }: Props) {
 							fill
 							sizes="40vw"
 							priority={index === 0}
+							loading={index === 0 ? "eager" : "lazy"}
 							className="object-cover"
 						/>
 					</div>
@@ -116,7 +117,7 @@ export default function ArtistCard({ artist, index }: Props) {
 
 						{!artist.isAcceptingNewClients && (
 							<p className="text-sm font-bold text-center m-0 py-1" style={{ color: "var(--color-dark)" }}>
-								Not Accepting New Clients
+								Currently Not Accepting New Clients
 							</p>
 						)}
 
@@ -140,6 +141,7 @@ export default function ArtistCard({ artist, index }: Props) {
 						fill
 						sizes="280px"
 						priority={index === 0}
+						loading={index === 0 ? "eager" : "lazy"}
 						className="object-cover"
 					/>
 				</div>
