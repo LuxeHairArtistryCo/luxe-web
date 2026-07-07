@@ -12,7 +12,7 @@ import { createHmac, timingSafeEqual } from 'node:crypto';
 // Console — one with the production domain as its notification URL, one with
 // the preview domain — each generates its own signature key. Rather than
 // branching in code, this relies on the same trick already used for
-// REVALIDATE_SECRET: Vercel scopes env vars per environment, so
+// SANITY_WEBHOOK_SECRET: Vercel scopes env vars per environment, so
 // SQUARE_WEBHOOK_SIGNATURE_KEY just holds a different value under Production
 // vs Preview in Vercel, matching whichever subscription's key Square
 // generated for that domain. Both environments hit this same route.

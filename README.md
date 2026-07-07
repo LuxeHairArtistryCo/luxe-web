@@ -11,7 +11,7 @@ NEXT_PUBLIC_SANITY_PROJECT_ID=
 NEXT_PUBLIC_SANITY_DATASET=
 NEXT_PUBLIC_SANITY_API_VERSION=
 NEXT_PUBLIC_SITE_URL=
-REVALIDATE_SECRET=
+SANITY_WEBHOOK_SECRET=
 SQUARE_WEBHOOK_SIGNATURE_KEY=
 ```
 
@@ -57,7 +57,7 @@ This is configured as **two separate webhook subscriptions** in Sanity at [sanit
 - **HTTP method:** GET
 - **HTTP headers:** `x-revalidate-secret` set to that environment's secret
 
-The webhook sends that secret as a header (not a URL query param — kept out of logs/history on purpose), which must match `REVALIDATE_SECRET`. Same trick as the Square webhooks below: one env var name, but a **different value under Vercel's Production vs Preview environments**, matching whichever domain's webhook is calling in. If content updates aren't showing up on the live site, check that webhook's "Attempts" log in Sanity's dashboard first — it shows the actual HTTP response your site sent back (a 401 usually means the secret in Sanity doesn't match what's set in Vercel for that environment).
+The webhook sends that secret as a header (not a URL query param — kept out of logs/history on purpose), which must match `SANITY_WEBHOOK_SECRET`. Same trick as the Square webhooks below: one env var name, but a **different value under Vercel's Production vs Preview environments**, matching whichever domain's webhook is calling in. If content updates aren't showing up on the live site, check that webhook's "Attempts" log in Sanity's dashboard first — it shows the actual HTTP response your site sent back (a 401 usually means the secret in Sanity doesn't match what's set in Vercel for that environment).
 
 ## Square services & the Square webhook
 
@@ -71,7 +71,7 @@ This is configured as **two separate webhook subscriptions** in the [Square Deve
 - **Event:** `catalog.version.updated`
 - **API version:** matching what `getSquareServices()` sends (`2024-01-17`)
 
-Square generates its own signature key per subscription, used to verify requests came from Square (not a spoofed POST). Rather than hardcoding two keys, this reuses the same trick as `REVALIDATE_SECRET`: `SQUARE_WEBHOOK_SIGNATURE_KEY` is a single env var name, but set to a **different value under Vercel's Production vs Preview environments** — each holding the signature key Square generated for that domain's subscription. If Square catalog changes aren't showing up, check the subscription's notification attempts in the Square Developer Console first (mirrors the "Attempts" log advice for Sanity above) — a 401 there usually means the signing key doesn't match what's set in Vercel for that environment.
+Square generates its own signature key per subscription, used to verify requests came from Square (not a spoofed POST). Rather than hardcoding two keys, this reuses the same trick as `SANITY_WEBHOOK_SECRET`: `SQUARE_WEBHOOK_SIGNATURE_KEY` is a single env var name, but set to a **different value under Vercel's Production vs Preview environments** — each holding the signature key Square generated for that domain's subscription. If Square catalog changes aren't showing up, check the subscription's notification attempts in the Square Developer Console first (mirrors the "Attempts" log advice for Sanity above) — a 401 there usually means the signing key doesn't match what's set in Vercel for that environment.
 
 ## Deployment
 

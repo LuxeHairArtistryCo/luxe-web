@@ -6,15 +6,15 @@ import { revalidateTag } from 'next/cache';
 // preview domain — so both environments get fresh content immediately
 // instead of waiting on the next deploy. Both subscriptions hit this same
 // route; there's no per-environment branching in code because Vercel already
-// scopes REVALIDATE_SECRET per environment (Production vs Preview), so each
-// deployment only accepts the header value matching its own webhook.
+// scopes SANITY_WEBHOOK_SECRET per environment (Production vs Preview), so
+// each deployment only accepts the header value matching its own webhook.
 export async function GET(request: NextRequest) {
 	// Secret is passed as a header (x-revalidate-secret) rather than a URL query
 	// param, so it doesn't end up in browser history, proxy logs, or analytics.
 	// Configure this same header in the Sanity webhook's "HTTP headers" field.
 	const secret = request.headers.get('x-revalidate-secret');
 
-	if (secret !== process.env.REVALIDATE_SECRET) {
+	if (secret !== process.env.SANITY_WEBHOOK_SECRET) {
 		return NextResponse.json({ error: 'Invalid secret' }, { status: 401 });
 	}
 
