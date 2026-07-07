@@ -6,7 +6,7 @@ import { Artist } from '@/lib/types'
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 	const baseUrl = process.env.NEXT_PUBLIC_SITE_URL!;
 
-	const artists: Artist[] = await sanityClient.fetch(ARTIST_QUERY);
+	const artists = await sanityClient.fetch<Artist[]>(ARTIST_QUERY);
 
 	const artistUrls = artists
 		.filter(a => a.slug?.current)

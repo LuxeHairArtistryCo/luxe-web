@@ -9,9 +9,7 @@ type Props = {
 
 export default function ArtistCard({ artist, index }: Props) {
 	const isEven = index % 2 === 0;
-	const basePath = artist.category === "hairstylists" ? "/hairstylists" : "/aestheticians";
-	const href = artist.slug?.current ? `${basePath}/${artist.slug.current}` : null;
-
+	const href = artist.slug?.current ? `/${artist.category}/${artist.slug.current}` : null;
 	const hasBooking =
 		artist.isAcceptingNewClients !== false &&
 		(artist.onlineBookingLink || artist.textBookingPhoneNumber || artist.callBookingPhoneNumber);
@@ -39,6 +37,7 @@ export default function ArtistCard({ artist, index }: Props) {
 							fill
 							sizes="40vw"
 							priority={index === 0}
+							loading={index === 0 ? "eager" : "lazy"}
 							className="object-cover"
 						/>
 					</div>
@@ -61,10 +60,14 @@ export default function ArtistCard({ artist, index }: Props) {
 								color: "var(--color-dark)",
 							}}
 						>
+							{/* --bio-clamp (defined in globals.css) is a responsive line-clamp
+							    count that grows at wider mobile breakpoints so more of the bio
+							    shows without a fixed line count looking wrong on every screen
+							    size. See README "Conventions" for more. */}
 							<div style={{
 								display: "-webkit-box",
 								WebkitBoxOrient: "vertical" as const,
-								WebkitLineClamp: "var(--bio-clamp)" as any,
+								WebkitLineClamp: "var(--bio-clamp)",
 								overflow: "hidden",
 							}}>
 								{artist.bio}
@@ -114,7 +117,7 @@ export default function ArtistCard({ artist, index }: Props) {
 
 						{!artist.isAcceptingNewClients && (
 							<p className="text-sm font-bold text-center m-0 py-1" style={{ color: "var(--color-dark)" }}>
-								Not Accepting New Clients
+								Currently Not Accepting New Clients
 							</p>
 						)}
 
@@ -138,6 +141,7 @@ export default function ArtistCard({ artist, index }: Props) {
 						fill
 						sizes="280px"
 						priority={index === 0}
+						loading={index === 0 ? "eager" : "lazy"}
 						className="object-cover"
 					/>
 				</div>

@@ -24,6 +24,8 @@ export default function Header({ settings }: Props) {
 							width={188}
 							height={75}
 							style={{ width: "auto", height: "75px" }}
+							priority
+							loading="eager"
 						/>
 						: <span className="text-xl font-bold text-white">{settings.companyName}</span>
 					}
@@ -33,6 +35,7 @@ export default function Header({ settings }: Props) {
 				<nav className="hidden md:flex gap-6 items-center" style={{ color: "var(--color-light)" }}>
 					<Link href="/hairstylists" className="hover:opacity-75 transition">Hairstylists</Link>
 					<Link href="/aestheticians" className="hover:opacity-75 transition">Aestheticians</Link>
+					<Link href="/about" className="hover:opacity-75 transition">About</Link>
 					{settings.ctaLink && (
 						<a href={settings.ctaLink} target="_blank" rel="noopener noreferrer" className="text-sm px-4 py-2 rounded-full font-semibold hover:opacity-90 transition" style={{ background: "var(--color-light)", color: "var(--color-primary)" }}>
 							{settings.ctaText ?? 'Book Now'}
@@ -62,6 +65,9 @@ export default function Header({ settings }: Props) {
 						</Link>
 						<Link href="/aestheticians" className="text-white text-base hover:opacity-75 transition" onClick={() => setMenuOpen(false)}>
 							Aestheticians
+						</Link>
+						<Link href="/about" className="text-white text-base hover:opacity-75 transition" onClick={() => setMenuOpen(false)}>
+							About
 						</Link>
 						{settings.ctaLink && (
 							<a href={settings.ctaLink} target="_blank" rel="noopener noreferrer" className="text-sm px-4 py-2 rounded-full font-semibold text-center hover:opacity-90 transition" style={{ background: "var(--color-primary)", color: "var(--color-light)" }} onClick={() => setMenuOpen(false)}>
