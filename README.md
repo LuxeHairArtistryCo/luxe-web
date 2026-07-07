@@ -73,6 +73,14 @@ This is configured as **two separate webhook subscriptions** in the [Square Deve
 
 Square generates its own signature key per subscription, used to verify requests came from Square (not a spoofed POST). Rather than hardcoding two keys, this reuses the same trick as `SANITY_WEBHOOK_SECRET`: `SQUARE_WEBHOOK_SIGNATURE_KEY` is a single env var name, but set to a **different value under Vercel's Production vs Preview environments** — each holding the signature key Square generated for that domain's subscription. If Square catalog changes aren't showing up, check the subscription's notification attempts in the Square Developer Console first (mirrors the "Attempts" log advice for Sanity above) — a 401 there usually means the signing key doesn't match what's set in Vercel for that environment.
 
+> **Preview-only gotcha:** non-production deployments on Vercel sit behind Vercel Authentication by default, which returns its own login page (a 401) before the request ever reaches this route — Square's webhook logs just show a bare 401 with no body in that case, easy to mistake for our own signature check failing. `Deployment Protection Exceptions` (the clean fix — make `preview.luxehairartistry.ca` fully public) requires Vercel's paid Advanced Deployment Protection add-on, so instead this project uses **Protection Bypass for Automation** (free, built for exactly this: third-party webhooks like Square/Stripe/Slack that can't send custom headers):
+>
+> 1. Vercel → Project Settings → Deployment Protection → Protection Bypass for Automation → generate a secret.
+> 2. In the Square Developer Console, edit the **preview** subscription's notification URL to include it as a query param: `https://preview.luxehairartistry.ca/api/revalidate-square?x-vercel-protection-bypass=<secret>`.
+> 3. Nothing needed for the production subscription — production deployments aren't protected by default, so its plain URL (no query param) is fine as-is.
+>
+> The route reads the notification URL straight from the incoming request (`request.url`) rather than rebuilding it from `NEXT_PUBLIC_SITE_URL`, specifically so the signature check still matches once that query param is appended.
+
 ## Deployment
 
 - Hosted on Vercel, auto-deploys on push.

@@ -28,7 +28,13 @@ export async function POST(request: NextRequest) {
 	// request body — reading the body as text (not parsing/re-stringifying
 	// JSON) is required or the HMAC won't match.
 	const rawBody = await request.text();
-	const notificationUrl = `${process.env.NEXT_PUBLIC_SITE_URL}/api/revalidate-square`;
+
+	// Using the literal incoming request URL (rather than rebuilding it from
+	// NEXT_PUBLIC_SITE_URL) so this still matches Square's signature when the
+	// preview subscription's notification URL has a
+	// ?x-vercel-protection-bypass=... query param appended — see the "Square
+	// webhook" section in the README for why that's needed on preview.
+	const notificationUrl = request.url;
 
 	const expectedSignature = createHmac('sha256', signatureKey)
 		.update(notificationUrl + rawBody)
