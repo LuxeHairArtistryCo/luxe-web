@@ -57,10 +57,19 @@ export default function ArtistBioLink({ bio, href }: Props) {
 			aria-label="Bio cut off — tap to keep reading on the full profile"
 		>
 			{clampedText}
+			{/* Sits on the last visible line only (bottom/right of the clamped
+			    text box). Inherits the bio's own text-sm/leading-relaxed from
+			    the ancestor in artistCard.tsx instead of setting its own font
+			    size, so it lines up with the surrounding text instead of
+			    looking like a mismatched sticker. The gradient fade is a fixed
+			    16px, not a percentage of this span's own (small) width, so the
+			    background goes fully opaque well before "Read more" starts —
+			    otherwise the fade only covered part of the label and the
+			    clamped text showed through behind it. */}
 			<span
-				className="absolute bottom-0 right-0 pl-6 text-xs font-semibold"
+				className="absolute bottom-0 right-0 pl-6 font-semibold whitespace-nowrap"
 				style={{
-					background: "linear-gradient(to right, transparent, var(--color-tertiary) 45%)",
+					background: "linear-gradient(to right, transparent, var(--color-tertiary) 16px)",
 					color: "var(--color-primary)",
 				}}
 			>
