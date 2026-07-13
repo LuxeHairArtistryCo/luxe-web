@@ -1,0 +1,16 @@
+{
+  "types": [
+    { "type": "feat", "section": "Features" },
+    { "type": "fix", "section": "Fixes" },
+    { "type": "perf", "section": "Performance" },
+    { "type": "refactor", "section": "Refactoring" },
+    { "type": "docs", "section": "Documentation" },
+    { "type": "build", "section": "Build & tooling" },
+    { "type": "ci", "hidden": true },
+    { "type": "chore", "hidden": true },
+    { "type": "style", "hidden": true },
+    { "type": "test", "hidden": true }
+  ],
+  "commitUrlFormat": "https://github.com/LuxeHairArtistryCo/luxe-web/commit/{{hash}}",
+  "compareUrlFormat": "https://github.com/LuxeHairArtistryCo/luxe-web/compare/{{previousTag}}...{{currentTag}}"
+}

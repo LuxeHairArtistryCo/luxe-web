@@ -15,6 +15,8 @@ SANITY_WEBHOOK_SECRET=
 SQUARE_WEBHOOK_SIGNATURE_KEY=
 ```
 
+Artists running their own independent Square account (their own terminal — see "Square services & the Square webhook" below) each need one more var, named after their Sanity slug — e.g. an artist with slug `jane-doe` needs `SQUARE_WEBHOOK_SIGNATURE_KEY_JANE_DOE=`. There's no fixed list of these; add one per independent-account artist as they're onboarded.
+
 Then:
 
 ```bash
@@ -31,18 +33,22 @@ Open [http://localhost:3000](http://localhost:3000). Content changes made in San
 | `npm run dev` | Local dev server with hot reload |
 | `npm run lint` | ESLint only |
 | `npm run typecheck` | TypeScript type-check only (`tsc --noEmit`) |
-| `npm run build` | Runs lint, then typecheck, then `next build` — same thing Vercel runs |
+| `npm run build` | Runs typecheck, then lint, then `next build` — same thing Vercel runs |
 | `npm start` | Runs a production build locally (run `build` first) |
+| `npm run release` | Bumps version, writes `CHANGELOG.md`, tags the release — see [`CONVENTIONS.md`](./CONVENTIONS.md) |
 
 ## Committing changes
 
-A Git pre-commit hook (via [Husky](https://typicode.github.io/husky/)) runs `npm run lint && npm run typecheck` automatically on every `git commit`. If either fails, the commit is blocked and the errors print in your terminal — fix them and commit again. Warnings (like a stray `TODO`/`FIXME` comment, flagged by the `no-warning-comments` rule in `eslint.config.mjs`) don't block anything.
+Two Git hooks run via [Husky](https://typicode.github.io/husky/):
 
-If Husky ever isn't firing, run `npm install` again (it wires itself up via the `prepare` script) and check `git config core.hooksPath` returns `.husky/_`.
+- `pre-commit` — runs `npm run typecheck && npm run lint`. Blocks the commit if either fails. ESLint warnings (e.g. the `no-warning-comments` rule flagging a stray `TODO`/`FIXME`) do not block.
+- `commit-msg` — validates the commit message against the format defined in [`CONVENTIONS.md`](./CONVENTIONS.md).
 
-To skip the hook in a genuine emergency: `git commit --no-verify`.
+If a hook isn't firing, run `npm install` again (it re-registers via the `prepare` script) and confirm `git config core.hooksPath` returns `.husky/_`.
 
-**Note:** ESLint and `tsc` catch different things — ESLint is fast, syntax/style-level linting; `tsc --noEmit` is the actual TypeScript compiler checking real types. Both run before every commit, but if you're debugging why something wasn't caught, check which of the two should have caught it.
+To bypass hooks: `git commit --no-verify`.
+
+Branching rules and the commit/versioning/release process are documented in [`CONVENTIONS.md`](./CONVENTIONS.md).
 
 ## Content updates & the revalidate webhook
 
@@ -61,22 +67,44 @@ The webhook sends that secret as a header (not a URL query param — kept out of
 
 ## Square services & the Square webhook
 
-An artist's services come from Square's Catalog API when `serviceType` is `square` (see `getSquareServices()` in `app/[category]/[slug]/page.tsx`). Square's catalog data is cached for up to an hour (`revalidate: 3600`) as a fallback, but also tagged `square` so it can be dropped immediately:
+An artist's services come from Square's Catalog API when `serviceType` is `square` (see `getSquareServices()` in `app/[category]/[slug]/page.tsx`). Square's catalog data is cached for up to an hour (`revalidate: 3600`) as a fallback, but also tagged both `square` and `square-<slug>` (that artist's Sanity slug) so it can be dropped immediately without waiting out the hour.
 
-Square fires a `catalog.version.updated` webhook to `/api/revalidate-square` whenever catalog data changes (new service, price change, team member assignment, etc.), which calls `revalidateTag('square')` so the next page load gets fresh data instead of waiting out the hour.
+Artists are on one of two kinds of Square setup, and each kind is wired to a different webhook route:
 
-This is configured as **two separate webhook subscriptions** in the [Square Developer Console](https://developer.squareup.com/apps) (your app → Webhooks) — one with the production domain as its notification URL, one with the preview domain — so both environments stay in sync, not just whichever one you remember to update. Each subscription needs:
+- **Shared salon account** — most artists. They all read from the same Square catalog (one `squareAccessToken`), and `squareTeamMemberId` filters it down to that artist's own services. One shared webhook (`/api/revalidate-square`) covers all of them.
+- **Independent account** — an artist with their own terminal running their own separate Square business, with their own `squareAccessToken` from their own Square Developer Console. They need their own dedicated webhook (`/api/revalidate-square/<their-slug>`), because a Square webhook subscription's signing key belongs to whichever Square account created it and can't be shared across accounts.
+
+Whichever kind an artist is, Square fires a `catalog.version.updated` webhook whenever their catalog data changes (new service, price change, team member assignment, etc.).
+
+### Setting up the shared account's webhook (once, already done)
+
+Configured as **two separate webhook subscriptions** in the [Square Developer Console](https://developer.squareup.com/apps) (your app → Webhooks) — one with the production domain as its notification URL, one with the preview domain — so both environments stay in sync, not just whichever one you remember to update. Each subscription needs:
 
 - **Notification URL:** `https://<domain>/api/revalidate-square` (production or preview domain respectively)
 - **Event:** `catalog.version.updated`
 - **API version:** matching what `getSquareServices()` sends (`2024-01-17`)
 
-Square generates its own signature key per subscription, used to verify requests came from Square (not a spoofed POST). Rather than hardcoding two keys, this reuses the same trick as `SANITY_WEBHOOK_SECRET`: `SQUARE_WEBHOOK_SIGNATURE_KEY` is a single env var name, but set to a **different value under Vercel's Production vs Preview environments** — each holding the signature key Square generated for that domain's subscription. If Square catalog changes aren't showing up, check the subscription's notification attempts in the Square Developer Console first (mirrors the "Attempts" log advice for Sanity above) — a 401 there usually means the signing key doesn't match what's set in Vercel for that environment.
+Square generates its own signature key per subscription, used to verify requests came from Square (not a spoofed POST). Rather than hardcoding two keys, this reuses the same trick as `SANITY_WEBHOOK_SECRET`: `SQUARE_WEBHOOK_SIGNATURE_KEY` is a single env var name, but set to a **different value under Vercel's Production vs Preview environments** — each holding the signature key Square generated for that domain's subscription.
+
+### Setting up a new independent-account artist's webhook
+
+Repeat this for every artist who has their own separate Square account (skip it entirely for artists on the shared account — they're already covered above). You'll need that artist's Sanity slug (Studio → the artist document → Slug field) and access to log into **their** Square account, not the salon's main one.
+
+1. In **that artist's own** [Square Developer Console](https://developer.squareup.com/apps) (logged in as/with access to their Square account), create an app if one doesn't exist yet, then add two webhook subscriptions under it (production + preview), same as the shared account above but with a per-artist notification URL:
+   - **Notification URL (production):** `https://luxehairartistry.ca/api/revalidate-square/<slug>`
+   - **Notification URL (preview):** `https://preview.luxehairartistry.ca/api/revalidate-square/<slug>` — then follow the "Preview-only gotcha" steps below to append the protection-bypass query param.
+   - **Event:** `catalog.version.updated`
+   - **API version:** `2024-01-17`
+2. Each of the two subscriptions generates its own signing key. In Vercel → Project Settings → Environment Variables, add **one new var name**, `SQUARE_WEBHOOK_SIGNATURE_KEY_<SLUG>` (slug uppercased, hyphens → underscores — e.g. slug `jane-doe` → `SQUARE_WEBHOOK_SIGNATURE_KEY_JANE_DOE`), and set it to the **production** subscription's key under the Production environment and the **preview** subscription's key under the Preview environment (same per-environment-scoping trick as every other secret in this project).
+3. Redeploy (or wait for the next deploy) so the new env var is picked up.
+4. Confirm it's working: publish a small catalog change in that artist's Square account and check the subscription's "Notification attempts" log in the Square Developer Console — a `200` with `{"revalidated":true}` means it worked; a `401` means the signing key in Vercel doesn't match, or the slug in the URL doesn't match the artist's actual Sanity slug.
+
+If catalog changes aren't showing up for either kind of account, check that subscription's notification attempts log in the Square Developer Console first (mirrors the "Attempts" log advice for Sanity above) — a 401 there usually means the signing key doesn't match what's set in Vercel for that environment.
 
 > **Preview-only gotcha:** non-production deployments on Vercel sit behind Vercel Authentication by default, which returns its own login page (a 401) before the request ever reaches this route — Square's webhook logs just show a bare 401 with no body in that case, easy to mistake for our own signature check failing. `Deployment Protection Exceptions` (the clean fix — make `preview.luxehairartistry.ca` fully public) requires Vercel's paid Advanced Deployment Protection add-on, so instead this project uses **Protection Bypass for Automation** (free, built for exactly this: third-party webhooks like Square/Stripe/Slack that can't send custom headers):
 >
-> 1. Vercel → Project Settings → Deployment Protection → Protection Bypass for Automation → generate a secret.
-> 2. In the Square Developer Console, edit the **preview** subscription's notification URL to include it as a query param: `https://preview.luxehairartistry.ca/api/revalidate-square?x-vercel-protection-bypass=<secret>`.
+> 1. Vercel → Project Settings → Deployment Protection → Protection Bypass for Automation → generate a secret (this is shared across all subscriptions, not per-artist — only generate it once).
+> 2. In the Square Developer Console, edit the **preview** subscription's notification URL to include it as a query param: `https://preview.luxehairartistry.ca/api/revalidate-square?x-vercel-protection-bypass=<secret>` for the shared account, or `https://preview.luxehairartistry.ca/api/revalidate-square/<slug>?x-vercel-protection-bypass=<secret>` for an independent-account artist.
 > 3. Nothing needed for the production subscription — production deployments aren't protected by default, so its plain URL (no query param) is fine as-is.
 >
 > The route reads the notification URL straight from the incoming request (`request.url`) rather than rebuilding it from `NEXT_PUBLIC_SITE_URL`, specifically so the signature check still matches once that query param is appended.
