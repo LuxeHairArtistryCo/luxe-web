@@ -53,10 +53,17 @@ async function getSquareServices(slug: string, teamMemberId?: string, isJuniorSt
 			const itemsResponse = await fetch(url.toString(), {
 				headers,
 				// revalidate is a time-based fallback in case the webhook is ever
-				// missed; tags lets the Square webhook (see
-				// app/api/revalidate-square/route.ts) drop this immediately when
+				// missed; tags lets the Square webhook drop this immediately when
 				// catalog data actually changes, instead of waiting up to an hour.
-				next: { revalidate: 3600, tags: ['square'] },
+				// Tagged with both the broad 'square' tag (dropped by the shared
+				// account's app/api/revalidate-square/route.ts) and this artist's
+				// own square-<slug> tag (dropped by
+				// app/api/revalidate-square/[artist]/route.ts, for artists on their
+				// own independent Square account) — an artist only needs whichever
+				// one actually applies to them, but tagging with both costs nothing
+				// and means this code doesn't need to know which kind of account a
+				// given artist is on.
+				next: { revalidate: 3600, tags: ['square', `square-${slug}`] },
 			});
 
 			if (!itemsResponse.ok) {
@@ -91,7 +98,7 @@ async function getSquareServices(slug: string, teamMemberId?: string, isJuniorSt
 				method: 'POST',
 				headers,
 				body: JSON.stringify({ object_ids: categoryIds }),
-				next: { revalidate: 3600, tags: ['square'] },
+				next: { revalidate: 3600, tags: ['square', `square-${slug}`] },
 			});
 
 			if (batchResponse.ok) {
@@ -295,8 +302,13 @@ export default async function ArtistPage({ params }: Props) {
 					</div>
 				</div>
 
-				{/* Bio — mobile only (see desktop version inside the hero row above) */}
-				<div className="mt-6 md:hidden">
+				{/* Bio — mobile only (see desktop version inside the hero row above).
+				    id="bio-mobile" is the deep-link target for the artist card list's
+				    "Read more" link (components/artistBioLink.tsx), which jumps here
+				    when a card's clamped bio is actually cut off. scrollMarginTop
+				    keeps the heading from landing flush against the viewport edge
+				    when the browser scrolls to the anchor. */}
+				<div id="bio-mobile" className="mt-6 md:hidden" style={{ scrollMarginTop: "1rem" }}>
 					<h2 className="text-xl font-bold mb-4" style={{ color: "var(--color-dark)" }}>About</h2>
 					<div className="px-4 py-3 text-sm leading-relaxed" style={{ background: "var(--color-tertiary)", border: "1px solid var(--color-dark-10)", borderRadius: "0.5rem", color: "var(--color-dark)", whiteSpace: "pre-line" }}>
 						{artist.bio}
