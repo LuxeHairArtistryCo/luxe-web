@@ -57,7 +57,7 @@ Semantic Versioning (`MAJOR.MINOR.PATCH`) in `package.json`. The version is bump
 4. Commits the changes as `chore(release): x.y.z`.
 5. Creates an annotated tag `vx.y.z`.
 
-Does not push. Review the commit and changelog, then push manually: `git push --follow-tags`.
+Does not push. Review the commit and changelog, then push manually.
 
 | Command | Effect |
 |---|---|
@@ -67,4 +67,4 @@ Does not push. Review the commit and changelog, then push manually: `git push --
 | `npm run release:minor` | Force a minor bump |
 | `npm run release:major` | Force a major bump |
 
-Run `npm run release` on `production`, after merging `preview` in, before pushing.
+**Run `npm run release` on `preview`, before opening the pull request into `production`** — not after merging. `production`'s branch protection blocks every direct push, including the release commit itself, so there is no point at which a direct push to `production` will succeed. Run the release step on `preview` once all the changes for that release are in, push `preview`, then open the `preview` → `production` pull request as usual; the version bump, changelog, and commit land in `production` as part of that merge. Push the tag separately, since tags aren't covered by the branch ruleset: `git push origin <tag>`.
