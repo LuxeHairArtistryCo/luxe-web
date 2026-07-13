@@ -1,10 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { revalidateTag } from 'next/cache';
-import { createHmac, timingSafeEqual } from 'node:crypto';
+import { verifySquareWebhookSignature } from '@/lib/squareWebhook';
 
 // Square webhook for catalog.version.updated (see Square Developer Console ->
-// your app -> Webhooks). Square fires this any time catalog data changes, so
-// this route drops the 'square' fetch tag (see the Square fetches in
+// your app -> Webhooks) for the MAIN shared salon Square account — artists
+// running their own independent Square account have their own subscription
+// and route instead, see app/api/revalidate-square/[artist]/route.ts. Square
+// fires this any time catalog data changes, so this route drops the
+// 'square' fetch tag (see the Square fetches in
 // app/[category]/[slug]/page.tsx) immediately instead of waiting for the
 // 3600s time-based revalidate to expire on its own.
 //
@@ -36,26 +39,16 @@ export async function POST(request: NextRequest) {
 	// webhook" section in the README for why that's needed on preview.
 	const notificationUrl = request.url;
 
-	const expectedSignature = createHmac('sha256', signatureKey)
-		.update(notificationUrl + rawBody)
-		.digest('base64');
-
-	const expected = Buffer.from(expectedSignature);
-	const received = Buffer.from(signature);
-
-	// Constant-time compare per Square's docs, to avoid a timing attack on the
-	// signature check. timingSafeEqual throws on mismatched buffer lengths
-	// rather than returning false, so the length check has to come first —
-	// this is the same fast-fail pattern Square's own SDK helper uses.
-	const isValid = expected.length === received.length && timingSafeEqual(expected, received);
-
-	if (!isValid) {
+	if (!verifySquareWebhookSignature(notificationUrl, rawBody, signature, signatureKey)) {
 		return NextResponse.json({ error: 'Invalid signature' }, { status: 401 });
 	}
 
 	// { expire: 0 } forces immediate expiration, same as /api/revalidate-sanity
 	// for Sanity — the next request for services should get fresh Square data
-	// instead of a stale-while-revalidate copy.
+	// instead of a stale-while-revalidate copy. This intentionally stays the
+	// broad 'square' tag (busts every artist's cached Square data, not just
+	// one) since this route covers the shared account — a catalog change here
+	// can affect any artist filtered out of it by team member ID.
 	revalidateTag('square', { expire: 0 });
 	return NextResponse.json({ revalidated: true });
 }
