@@ -1,6 +1,7 @@
 import Image from "next/image";
 import { Artist } from "@/lib/types";
 import { urlFor } from "@/lib/image";
+import ArtistBioLink from "@/components/artistBioLink";
 
 type Props = {
 	artist: Artist;
@@ -63,15 +64,12 @@ export default function ArtistCard({ artist, index }: Props) {
 							{/* --bio-clamp (defined in globals.css) is a responsive line-clamp
 							    count that grows at wider mobile breakpoints so more of the bio
 							    shows without a fixed line count looking wrong on every screen
-							    size. See README "Conventions" for more. */}
-							<div style={{
-								display: "-webkit-box",
-								WebkitBoxOrient: "vertical" as const,
-								WebkitLineClamp: "var(--bio-clamp)",
-								overflow: "hidden",
-							}}>
-								{artist.bio}
-							</div>
+							    size. See README "Conventions" for more. ArtistBioLink detects
+							    when the clamp actually cuts the bio off and, if so, turns it
+							    into a link to the "About" section on the artist's full profile
+							    (app/[category]/[slug]/page.tsx, #bio-mobile) so a tap continues
+							    reading instead of dead-ending on the truncated text. */}
+							<ArtistBioLink bio={artist.bio} href={href} />
 						</div>
 					</div>
 				</div>
